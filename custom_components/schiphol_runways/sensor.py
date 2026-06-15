@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.components.sensor import SensorEntity, SensorEntityDescription
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -16,17 +16,14 @@ from .const import (
     STATE_INBOUND,
     STATE_NOT_IN_USE,
     STATE_OUTBOUND,
-    STATE_UNAVAILABLE,
 )
 from .coordinator import SchipholRunwayCoordinator
 
-# Icon mapping per state
 _STATE_ICONS = {
     STATE_NOT_IN_USE: "mdi:airplane-off",
-    STATE_INBOUND: "mdi:airplane-landing",
-    STATE_OUTBOUND: "mdi:airplane-takeoff",
-    STATE_BOTH: "mdi:airplane",
-    STATE_UNAVAILABLE: "mdi:airplane-alert",
+    STATE_INBOUND:    "mdi:airplane-landing",
+    STATE_OUTBOUND:   "mdi:airplane-takeoff",
+    STATE_BOTH:       "mdi:airplane",
 }
 
 
@@ -37,12 +34,10 @@ async def async_setup_entry(
 ) -> None:
     """Set up one sensor per Schiphol runway."""
     coordinator: SchipholRunwayCoordinator = hass.data[DOMAIN][entry.entry_id]
-
-    entities = [
+    async_add_entities(
         SchipholRunwaySensor(coordinator, designator, meta)
         for designator, meta in RUNWAYS.items()
-    ]
-    async_add_entities(entities)
+    )
 
 
 class SchipholRunwaySensor(CoordinatorEntity[SchipholRunwayCoordinator], SensorEntity):
@@ -60,24 +55,16 @@ class SchipholRunwaySensor(CoordinatorEntity[SchipholRunwayCoordinator], SensorE
         self._designator = designator
         self._runway_name = meta["name"]
 
-        # Unique ID: domain + designator (e.g. "schiphol_runways_18L/36R")
         self._attr_unique_id = f"{DOMAIN}_{designator}"
-
-        # Human-readable name: "18L/36R Aalsmeerbaan"
         self._attr_name = f"{designator} {self._runway_name}"
 
-        # Device info groups all runway sensors under one device
         self._attr_device_info = {
             "identifiers": {(DOMAIN, "schiphol_eham")},
             "name": "Schiphol Airport (EHAM)",
             "manufacturer": "LVNL",
             "model": "Runway Status",
-            "configuration_url": "https://www.lvnl.nl/omgeving/actueel-baangebruik-schiphol",
+            "configuration_url": "https://www.dutchplanespotters.nl/runways/ams/",
         }
-
-    # ─────────────────────────────────────────────────────────────────────────
-    # State
-    # ─────────────────────────────────────────────────────────────────────────
 
     @property
     def _runway_data(self) -> dict[str, Any]:
@@ -87,40 +74,26 @@ class SchipholRunwaySensor(CoordinatorEntity[SchipholRunwayCoordinator], SensorE
 
     @property
     def native_value(self) -> str:
-        """Return the sensor state."""
-        data = self._runway_data
-        return data.get("state", STATE_UNAVAILABLE)
+        return self._runway_data.get("state", STATE_NOT_IN_USE)
 
     @property
     def icon(self) -> str:
-        return _STATE_ICONS.get(self.native_value, "mdi:airplane-alert")
-
-    # ─────────────────────────────────────────────────────────────────────────
-    # Extra state attributes
-    # ─────────────────────────────────────────────────────────────────────────
+        return _STATE_ICONS.get(self.native_value, "mdi:airplane-off")
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         data = self._runway_data
         attrs: dict[str, Any] = {
-            "runway": self._designator,
-            "name": self._runway_name,
+            "runway":          self._designator,
+            "name":            self._runway_name,
             "landing_heading": data.get("landing_heading"),
             "takeoff_heading": data.get("takeoff_heading"),
-            "data_source": "LVNL (Luchtverkeersleiding Nederland)",
-            "data_url": "https://www.lvnl.nl/omgeving/actueel-baangebruik-schiphol",
+            "data_source":     "LVNL via dutchplanespotters.nl",
         }
-
-        # Add all raw active runways for debugging
         if self.coordinator.data:
-            attrs["all_active_landing"] = self.coordinator.data.get("_raw_landing", [])
-            attrs["all_active_takeoff"] = self.coordinator.data.get("_raw_takeoff", [])
-
+            attrs["all_active_landing"]  = self.coordinator.data.get("_raw_landing", [])
+            attrs["all_active_takeoff"]  = self.coordinator.data.get("_raw_takeoff", [])
         return attrs
-
-    # ─────────────────────────────────────────────────────────────────────────
-    # Availability
-    # ─────────────────────────────────────────────────────────────────────────
 
     @property
     def available(self) -> bool:

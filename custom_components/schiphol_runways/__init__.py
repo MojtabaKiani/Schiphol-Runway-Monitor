@@ -1,14 +1,8 @@
-"""Schiphol Runway Monitor — Home Assistant custom integration.
-
-Provides one sensor per Schiphol runway with states:
-  not_in_use | inbound | outbound | inbound_and_outbound
-
-Data source: LVNL (Luchtverkeersleiding Nederland)
-  https://www.lvnl.nl/omgeving/actueel-baangebruik-schiphol
-"""
+"""Schiphol Runway Monitor — Home Assistant custom integration."""
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -19,31 +13,32 @@ from .const import DEFAULT_SCAN_INTERVAL, DOMAIN
 from .coordinator import SchipholRunwayCoordinator
 
 _LOGGER = logging.getLogger(__name__)
-
 PLATFORMS: list[Platform] = [Platform.SENSOR]
+
+
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    """Register the static icon path once at setup time."""
+    hass.http.register_static_path(
+        f"/local/{DOMAIN}",
+        str(Path(__file__).parent / "www"),
+        cache_headers=True,
+    )
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Schiphol Runway Monitor from a config entry."""
     scan_interval = entry.options.get("scan_interval", DEFAULT_SCAN_INTERVAL)
-
     coordinator = SchipholRunwayCoordinator(hass, scan_interval)
 
-    # Do the first refresh — raises ConfigEntryNotReady if it fails
     try:
         await coordinator.async_config_entry_first_refresh()
     except Exception as exc:
-        raise ConfigEntryNotReady(
-            f"Unable to fetch Schiphol runway data: {exc}"
-        ) from exc
+        raise ConfigEntryNotReady(f"Unable to fetch Schiphol runway data: {exc}") from exc
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
-
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
-    # Re-create coordinator when options change (e.g. scan_interval updated)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
-
     return True
 
 
@@ -55,5 +50,5 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Handle options update (e.g. user changed poll interval)."""
+    """Reload when options change."""
     await hass.config_entries.async_reload(entry.entry_id)
