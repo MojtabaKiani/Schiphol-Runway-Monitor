@@ -1,0 +1,29 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Schiphol Runway Monitor",
+        "description": "Monitors which Schiphol runways are active using live LVNL data (updated every 5 minutes).\n\nSource: {url}",
+        "data": {
+          "scan_interval": "Poll interval (minutes)"
+        },
+        "data_description": {
+          "scan_interval": "How often to check LVNL for runway updates. Minimum 1, maximum 60. LVNL refreshes their data every 5 minutes."
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Only one Schiphol Runway Monitor instance is allowed."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Schiphol Runway Monitor — Options",
+        "data": {
+          "scan_interval": "Poll interval (minutes)"
+        }
+      }
+    }
+  }
+}

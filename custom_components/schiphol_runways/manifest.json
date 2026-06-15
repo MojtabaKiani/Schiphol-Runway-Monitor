@@ -1,0 +1,12 @@
+{
+  "domain": "schiphol_runways",
+  "name": "Schiphol Runway Monitor",
+  "version": "1.0.0",
+  "documentation": "https://github.com/your-repo/schiphol-runways-ha",
+  "issue_tracker": "https://github.com/your-repo/schiphol-runways-ha/issues",
+  "dependencies": [],
+  "codeowners": [],
+  "requirements": [],
+  "iot_class": "cloud_polling",
+  "config_flow": true
+}
