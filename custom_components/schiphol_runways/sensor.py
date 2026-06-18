@@ -55,7 +55,7 @@ def _device_info() -> dict:
         "name": "Schiphol Airport (EHAM)",
         "manufacturer": "LVNL",
         "model": "Runway Status",
-        "configuration_url": "https://www.dutchplanespotters.nl/runways/ams/",
+        "configuration_url": "https://github.com/archofthings/ha-Schiphol-Runway-monitor",
     }
 
 

@@ -22,6 +22,7 @@ Response shape:
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
@@ -89,12 +90,27 @@ class SchipholRunwayCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def _fetch(self, date_str: str) -> dict:
         url = f"{API_URL}?date={date_str}"
-        timeout = aiohttp.ClientTimeout(total=15)
-        async with aiohttp.ClientSession(headers=_HEADERS, timeout=timeout) as session:
-            async with session.get(url) as resp:
-                if resp.status != 200:
-                    raise UpdateFailed(f"API returned HTTP {resp.status} for {url}")
-                return await resp.json(content_type=None)
+        timeout = aiohttp.ClientTimeout(total=20)
+        last_exc: Exception | None = None
+        for attempt in range(3):
+            if attempt:
+                await asyncio.sleep(3 * attempt)
+            try:
+                async with aiohttp.ClientSession(headers=_HEADERS, timeout=timeout) as session:
+                    async with session.get(url) as resp:
+                        if resp.status == 200:
+                            return await resp.json(content_type=None)
+                        # permanent client error — no point retrying
+                        if resp.status < 500 and resp.status != 429:
+                            raise UpdateFailed(f"API returned HTTP {resp.status} for {url}")
+                        last_exc = Exception(f"HTTP {resp.status}")
+                        _LOGGER.warning("Schiphol API HTTP %s (attempt %d/3)", resp.status, attempt + 1)
+            except UpdateFailed:
+                raise
+            except Exception as exc:
+                last_exc = exc
+                _LOGGER.warning("Schiphol fetch attempt %d/3 failed: %s", attempt + 1, exc)
+        raise UpdateFailed(f"All 3 fetch attempts failed; last error: {last_exc}") from last_exc
 
 
 # ── Pure helpers ──────────────────────────────────────────────────────────────
