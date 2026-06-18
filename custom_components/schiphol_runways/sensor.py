@@ -73,8 +73,6 @@ async def async_setup_entry(
         for designator, meta in RUNWAYS.items()
     ]
     entities.append(SchipholPeakTimeSensor(coordinator))
-    entities.append(SchipholInboundPeakBinarySensor(coordinator))
-    entities.append(SchipholOutboundPeakBinarySensor(coordinator))
     async_add_entities(entities)
 
 
