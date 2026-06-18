@@ -291,4 +291,4 @@ Data sourced from [dutchplanespotters.nl](https://www.dutchplanespotters.nl/), w
 [release-badge]: https://img.shields.io/github/v/release/archofthings/ha-schiphol-runway-monitor
 [release-url]: https://github.com/archofthings/ha-schiphol-runway-monitor/releases
 [license-badge]: https://img.shields.io/badge/License-MIT-yellow.svg
-[license-url]: https://github.com/archofthings/ha-schiphol-runway-monitor/LICENSE
+[license-url]: https://github.com/archofthings/ha-schiphol-runway-monitor/blob/main/LICENSE
